@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Design Work BD | Premium Printing & Portfolio</title>
+    <link rel="icon" href="logo.png">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@300;400;500;600;700&display=swap');
+        body { font-family: 'Hind Siliguri', sans-serif; background: #000000; color: #e2e8f0; overflow-x: hidden; scroll-behavior: smooth; }
+        .glass { background: rgba(10, 10, 10, 0.9); backdrop-filter: blur(20px); border-bottom: 1px solid rgba(255, 255, 255, 0.05); }
+        .service-card { background: #0a0a0a; border: 1px solid #1a1a1a; border-radius: 24px; transition: 0.4s; overflow: hidden; }
+        .gradient-text { background: linear-gradient(90deg, #f59e0b, #f97316); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .btn-gradient { background: linear-gradient(135deg, #f97316 0%, #ea580c 100%); transition: 0.3s; }
+        
+        #chat-widget { position: fixed; bottom: 30px; right: 25px; z-index: 2000; }
+        .chat-box { width: 320px; background: #0f0f0f; border-radius: 20px; border: 1px solid #f9731650; display: none; flex-direction: column; overflow: hidden; box-shadow: 0 20px 50px rgba(0,0,0,0.8); }
+        .chat-messages { height: 280px; padding: 15px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; font-size: 13px; }
+        .msg { padding: 10px 14px; border-radius: 15px; max-width: 85%; }
+        .msg-bot { background: #1a1a1a; align-self: flex-start; }
+        .msg-user { background: #f97316; color: white; align-self: flex-end; }
+        
+        .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 2100; align-items: center; justify-content: center; padding: 20px; }
+    </style>
+</head>
+<body>
+
+    <!-- Chat Assistant -->
+    <div id="chat-widget">
+        <div class="chat-box mb-4" id="chatBox">
+            <div class="bg-orange-600 p-4 flex items-center gap-3">
+                <img src="logo.png" class="w-8 h-8 rounded-full">
+                <div class="text-white"><p class="text-[11px] font-bold">Design Work BD Assistant</p></div>
+                <button onclick="toggleChat()" class="ml-auto text-white/70"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="chat-messages" id="chatMsgs">
+                <div class="msg msg-bot">আসসালামু আলাইকুম! আপনার নাম কি?</div>
+            </div>
+            <div class="p-3 bg-black flex gap-2">
+                <input type="text" id="chatInp" placeholder="এখানে লিখুন..." class="flex-1 bg-zinc-900 border border-zinc-800 p-2 rounded-lg text-xs outline-none text-white">
+                <button onclick="handleChat()" class="text-orange-500 px-2"><i class="fas fa-paper-plane"></i></button>
+            </div>
+        </div>
+        <button onclick="toggleChat()" class="relative bg-green-600 w-16 h-16 rounded-full shadow-2xl flex items-center justify-center text-white text-3xl hover:scale-105 transition-all">
+            <i class="fab fa-whatsapp"></i>
+            <div class="absolute -top-1 -right-1 bg-white rounded-full p-1 border-2 border-green-600 text-green-600 text-[8px]"><i class="fas fa-check"></i></div>
+        </button>
+    </div>
+
+    <!-- Navigation -->
+    <nav class="glass sticky top-0 z-50 px-5 py-4 flex justify-between items-center">
+        <div class="flex items-center gap-3">
+            <img src="logo.png" class="w-12 h-12 rounded-full border-2 border-orange-500">
+            <div>
+                <h1 class="text-lg font-extrabold gradient-text leading-none">Design Work BD</h1>
+                <p class="text-[9px] uppercase tracking-[2px] text-gray-500 font-bold">Premium Graphics Hub</p>
+            </div>
+        </div>
+        <button onclick="toggleChat()" class="btn-gradient px-5 py-2.5 rounded-full text-xs font-bold text-white uppercase tracking-widest">Order Now</button>
+    </nav>
+
+    <!-- Tracking -->
+    <div class="max-w-4xl mx-auto px-5 mt-10">
+        <div class="bg-zinc-900/50 p-4 rounded-3xl border border-white/5 flex flex-col md:flex-row gap-4">
+            <input type="number" id="trackPhone" placeholder="ফোন নম্বর দিয়ে অর্ডার ট্র্যাক করুন" class="w-full bg-black/50 px-5 py-3 rounded-2xl outline-none text-sm border border-white/10 text-white focus:border-orange-500">
+            <button onclick="trackOrder()" class="bg-zinc-800 hover:bg-orange-600 px-8 py-3 rounded-2xl text-xs font-bold uppercase transition-all">Track Status</button>
+        </div>
+        <div id="trackResult" class="mt-4 px-2"></div>
+    </div>
+
+    <!-- Dynamic Products Grid (Description Added Here) -->
+    <main class="max-w-7xl mx-auto px-5 py-16">
+        <div id="services-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div class="col-span-full text-center py-20 text-orange-500"><i class="fas fa-circle-notch fa-spin text-3xl"></i></div>
+        </div>
+    </main>
+
+    <!-- TESTIMONIALS -->
+    <section class="max-w-7xl mx-auto px-6 py-16 border-t border-zinc-900/50 text-center">
+        <h3 class="text-2xl font-black mb-16 text-white italic">কাস্টমারদের <span class="text-orange-600">মতামত</span></h3>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div class="bg-[#121212] p-8 rounded-[40px] text-left relative">
+                <div class="flex text-orange-600 mb-6 text-[10px]"><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i></div>
+                <p class="text-zinc-500 text-sm mb-8">"অসাধারণ কাজ! আমার সার্টিফিকেট এডিটিং একদম অরিজিনাল হয়েছে। ডেলিভারিও পেয়েছি দ্রুত।"</p>
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-full bg-zinc-900 flex items-center justify-center font-bold text-orange-600">R</div>
+                    <span class="text-zinc-300 text-xs font-bold">Rakib Hossain</span>
+                </div>
+            </div>
+            <div class="bg-[#121212] p-8 rounded-[40px] text-left relative">
+                <div class="flex text-orange-600 mb-6 text-[10px]"><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i></div>
+                <p class="text-zinc-500 text-sm mb-8">"তাদের ডিজাইন সেন্স চমৎকার। লোগো ডিজাইন করে নিলাম, আমি ১০০% সন্তুষ্ট।"</p>
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-full bg-zinc-900 flex items-center justify-center font-bold text-orange-600">S</div>
+                    <span class="text-zinc-300 text-xs font-bold">Sabbir Ahmed</span>
+                </div>
+            </div>
+            <div class="bg-[#121212] p-8 rounded-[40px] text-left relative">
+                <div class="flex text-orange-600 mb-6 text-[10px]"><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i></div>
+                <p class="text-zinc-500 text-sm mb-8">"কম খরচে এত ভালো কোয়ালিটির প্রিন্ট আশা করিনি। অনেক ধন্যবাদ আপনাদের।"</p>
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-full bg-zinc-900 flex items-center justify-center font-bold text-orange-600">M</div>
+                    <span class="text-zinc-300 text-xs font-bold">Mitu Akter</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- DISCLAIMER -->
+    <section class="max-w-7xl mx-auto px-6 py-10">
+        <h4 class="text-white font-bold text-xl mb-6">আইনি সতর্কতা (DISCLAIMER)</h4>
+        <p class="text-zinc-600 text-sm leading-relaxed">আমাদের সার্ভিসগুলো শুধুমাত্র ব্যক্তিগত শখ বা রিপ্লেসমেন্ট উদ্দেশ্যে। কোনো সরকারি বা একাডেমিক নথিপত্র অবৈধ কাজে ব্যবহার করা আইনত দণ্ডনীয়। কোনো অনৈতিক ব্যবহারের দায়ভার কর্তৃপক্ষ বহন করবে না।</p>
+    </section>
+
+    <!-- FOOTER -->
+    <footer class="bg-black px-6 py-16 border-t border-zinc-900">
+        <div class="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12">
+            <div class="space-y-6">
+                <img src="logo.png" class="w-20 h-20 rounded-3xl">
+                <p class="text-zinc-500 text-sm">Design Work BD - আপনার বিশ্বস্ত গ্রাফিক্স এবং প্রিন্টিং পার্টনার। আমরা নিখুঁত কাজ এবং দ্রুত ডেলিভারিতে বিশ্বাসী।</p>
+                <div class="flex gap-3">
+                    <a href="https://wa.me/8801948929321" class="w-12 h-12 bg-[#0a0a0a] rounded-2xl flex items-center justify-center text-green-500 text-xl"><i class="fab fa-whatsapp"></i></a>
+                    <a href="https://facebook.com/DesignWorkBD2" class="w-12 h-12 bg-[#0a0a0a] rounded-2xl flex items-center justify-center text-blue-600 text-xl"><i class="fab fa-facebook-f"></i></a>
+                    <a href="https://instagram.com/designworkbd1" class="w-12 h-12 bg-[#0a0a0a] rounded-2xl flex items-center justify-center text-pink-600 text-xl"><i class="fab fa-instagram"></i></a>
+                    <a href="https://t.me/designworkbd" class="w-12 h-12 bg-[#0a0a0a] rounded-2xl flex items-center justify-center text-sky-500 text-xl"><i class="fab fa-telegram-plane"></i></a>
+                </div>
+            </div>
+            <div>
+                <h4 class="text-white font-bold text-lg mb-8 uppercase tracking-widest">OUR SERVICES</h4>
+                <ul class="space-y-4">
+                    <li class="flex items-center gap-3 text-zinc-400 text-sm"><i class="fas fa-check text-orange-600"></i> সার্টিফিকেট এডিটিং</li>
+                    <li class="flex items-center gap-3 text-zinc-400 text-sm"><i class="fas fa-check text-orange-600"></i> হাই-কোয়ালিটি প্রিন্টিং</li>
+                    <li class="flex items-center gap-3 text-zinc-400 text-sm"><i class="fas fa-check text-orange-600"></i> লোগো ও ব্র্যান্ডিং</li>
+                </ul>
+            </div>
+            <div>
+                <h4 class="text-white font-bold text-lg mb-8 uppercase tracking-widest">WHY CHOOSE US</h4>
+                <ul class="space-y-4">
+                    <li class="flex items-center gap-3 text-zinc-400 text-sm"><i class="fas fa-bolt text-orange-600"></i> দ্রুত ডেলিভারি</li>
+                    <li class="flex items-center gap-3 text-zinc-400 text-sm"><i class="fas fa-shield-alt text-orange-600"></i> ১০০% গোপনীয়তা</li>
+                    <li class="flex items-center gap-3 text-zinc-400 text-sm"><i class="fas fa-wallet text-orange-600"></i> সাশ্রয়ী মূল্য</li>
+                </ul>
+            </div>
+            <div>
+                <h4 class="text-white font-bold text-lg mb-8 uppercase tracking-widest">QUICK CONTACT</h4>
+                <div class="space-y-6 text-zinc-500 text-sm">
+                    <div class="flex items-center gap-3"><i class="fas fa-envelope text-orange-600 text-lg"></i> designworkbd94@gmail.com</div>
+                    <div class="flex items-center gap-3"><i class="fas fa-phone-alt text-orange-600 text-lg"></i> +88 01948-929321</div>
+                    <a href="https://about.me/designworkbd" class="inline-block mt-4 text-orange-600 font-bold border-b border-zinc-800 pb-1 uppercase text-xs tracking-widest">VIEW FULL PROFILE</a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Order Modal -->
+    <div id="orderModal" class="modal">
+        <div class="bg-zinc-950 p-8 rounded-[35px] w-full max-w-sm border border-zinc-800">
+            <h3 id="modalTitle" class="text-white font-bold text-center mb-5">সার্ভিস অর্ডার</h3>
+            <div class="bg-orange-600/10 border border-orange-600/30 p-4 rounded-2xl mb-6 text-center">
+                <p class="text-[8px] text-orange-500 font-black uppercase mb-1">বিকাশ/নগদ (Personal)</p>
+                <p id="displayPayNum" class="text-xl font-black text-white tracking-widest">01948929321</p>
+            </div>
+            <div class="space-y-4">
+                <input type="text" id="custName" placeholder="আপনার নাম" class="w-full bg-black border border-zinc-800 p-4 rounded-xl text-white outline-none focus:border-orange-600">
+                <input type="number" id="custPhone" placeholder="ফোন নম্বর" class="w-full bg-black border border-zinc-800 p-4 rounded-xl text-white outline-none focus:border-orange-600">
+                <div class="grid grid-cols-2 gap-3">
+                    <button onclick="setOrderType('PDF')" id="btnPdf" class="p-4 rounded-xl border-2 border-orange-600 text-xs font-bold bg-zinc-900 text-white">PDF</button>
+                    <button onclick="setOrderType('Hard Copy')" id="btnPrint" class="p-4 rounded-xl border border-zinc-800 text-xs font-bold bg-zinc-900 text-zinc-400">Print</button>
+                </div>
+                <button onclick="confirmOrder()" class="w-full btn-gradient py-4 rounded-xl font-bold text-white uppercase mt-4">Confirm Order</button>
+                <button onclick="closeModal()" class="w-full text-zinc-600 text-[10px] font-bold uppercase mt-2">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyAixeF88AV6RvG0OJmASm-Us1J3iaUwJIk",
+            authDomain: "designworkbd-5b16a.firebaseapp.com",
+            databaseURL: "https://designworkbd-5b16a-default-rtdb.firebaseio.com",
+            projectId: "designworkbd-5b16a",
+            storageBucket: "designworkbd-5b16a.firebasestorage.app",
+            messagingSenderId: "998861158372",
+            appId: "1:998861158372:web:822d38c710d109e6ad79f1"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+
+        let selectedProduct = null;
+        let selectedType = 'PDF';
+        let currentPaymentNum = '';
+
+        function toggleChat() {
+            const box = document.getElementById('chatBox');
+            box.style.display = box.style.display === 'flex' ? 'none' : 'flex';
+        }
+
+        let chatStep = 0;
+        let userData = { name: '', phone: '' };
+
+        function handleChat() {
+            const input = document.getElementById('chatInp');
+            const val = input.value.trim();
+            if(!val) return;
+            const container = document.getElementById('chatMsgs');
+            container.innerHTML += `<div class="msg msg-user">${val}</div>`;
+            input.value = '';
+            setTimeout(() => {
+                if(chatStep === 0) {
+                    userData.name = val;
+                    container.innerHTML += `<div class="msg msg-bot">ধন্যবাদ ${val}, আপনার ফোন নম্বরটি দিন।</div>`;
+                    chatStep = 1;
+                } else if(chatStep === 1) {
+                    userData.phone = val;
+                    container.innerHTML += `<div class="msg msg-bot">আপনি কোন সার্ভিসটি নিতে চান তার নাম লিখুন।</div>`;
+                    chatStep = 2;
+                } else {
+                    const msg = `আসসালামু আলাইকুম,%0A*নতুন ইনকোয়ারি (Smart Chat)*%0A----------------------%0A👤 নাম: ${userData.name}%0A📞 ফোন: ${userData.phone}%0A🏷️ সার্ভিস: ${val}%0A----------------------`;
+                    window.location.href = `https://wa.me/8801948929321?text=${msg}`;
+                }
+                container.scrollTop = container.scrollHeight;
+            }, 800);
+        }
+
+        db.ref('settings/paymentNum').on('value', snap => {
+            currentPaymentNum = snap.val() || "01948-929321";
+            document.getElementById('displayPayNum').innerText = currentPaymentNum;
+        });
+
+        // Load Products with Description
+        db.ref('products').on('value', snap => {
+            const container = document.getElementById('services-grid');
+            container.innerHTML = '';
+            const data = snap.val();
+            if(!data) return;
+            Object.values(data).reverse().forEach(p => {
+                container.innerHTML += `
+                <div class="service-card group">
+                    <div class="overflow-hidden"><img src="${p.img}" class="w-full h-48 object-cover group-hover:scale-110 transition-all duration-500"></div>
+                    <div class="p-6">
+                        <div class="flex justify-between mb-3 text-[10px] font-bold">
+                            <span class="text-zinc-500 uppercase">Soft: ৳${p.pdfPrice}</span>
+                            <span class="text-orange-500 uppercase">Hard: ৳${p.printPrice}</span>
+                        </div>
+                        <h4 class="text-white font-bold mb-2">${p.title}</h4>
+                        <p class="text-[11px] text-zinc-500 mb-5 line-clamp-2 leading-relaxed">${p.desc || ''}</p>
+                        <button onclick='openOrder("${p.title}", "${p.pdfPrice}", "${p.printPrice}")' class="btn-gradient w-full py-3 rounded-xl text-[10px] font-bold uppercase text-white">Order Now</button>
+                    </div>
+                </div>`;
+            });
+        });
+
+        function openOrder(title, pdf, print) {
+            selectedProduct = { title, pdf, print };
+            document.getElementById('modalTitle').innerText = title;
+            document.getElementById('orderModal').style.display = 'flex';
+        }
+
+        function setOrderType(type) {
+            selectedType = type;
+            document.getElementById('btnPdf').style.borderColor = type === 'PDF' ? '#f97316' : '#27272a';
+            document.getElementById('btnPrint').style.borderColor = type === 'Hard Copy' ? '#f97316' : '#27272a';
+        }
+
+        function confirmOrder() {
+            const name = document.getElementById('custName').value;
+            const phone = document.getElementById('custPhone').value;
+            if(!name || !phone) return alert('তথ্য দিন!');
+            db.ref('orders').push({
+                productTitle: selectedProduct.title,
+                customerName: name,
+                customerPhone: phone,
+                orderType: selectedType,
+                status: 'Pending',
+                timestamp: Date.now()
+            }).then(() => {
+                const msg = `*অর্ডার ডিটেইলস*%0A----------------------%0A📦 সার্ভিস: ${selectedProduct.title}%0A📑 টাইপ: ${selectedType}%0A👤 নাম: ${name}%0A📞 ফোন: ${phone}%0A----------------------`;
+                window.location.href = `https://wa.me/8801948929321?text=${msg}`;
+            });
+        }
+
+        function trackOrder() {
+            const phone = document.getElementById('trackPhone').value;
+            if(!phone) return;
+            db.ref('orders').once('value', snap => {
+                const orders = snap.val();
+                let found = false;
+                let html = '';
+                for(let id in orders) {
+                    if(orders[id].customerPhone == phone) {
+                        found = true;
+                        html += `<div class="bg-zinc-900 p-4 rounded-2xl mb-2 border-l-4 border-orange-500"><p class="text-xs font-bold text-white">${orders[id].productTitle}</p><p class="text-[10px] text-orange-500 font-bold mt-1">স্ট্যাটাস: ${orders[id].status}</p></div>`;
+                    }
+                }
+                document.getElementById('trackResult').innerHTML = found ? html : '<p class="text-red-500 text-xs text-center">অর্ডার পাওয়া যায়নি</p>';
+            });
+        }
+        function closeModal() { document.getElementById('orderModal').style.display = 'none'; }
+    </script>
+</body>
+</html>

@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DWBD | অ্যাডমিন কন্ট্রোল</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@300;500;700&display=swap');
+        body { font-family: 'Hind Siliguri', sans-serif; background: #020617; color: white; }
+        .input-box { background: #0f172a; border: 1px solid #1e293b; padding: 14px; border-radius: 15px; width: 100%; color: white; margin-bottom: 12px; outline: none; }
+        .glass-card { background: rgba(15, 23, 42, 0.8); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.05); border-radius: 30px; padding: 25px; }
+    </style>
+</head>
+<body class="p-4 pb-24">
+
+    <div id="login-box" class="fixed inset-0 bg-[#020617] z-[2000] flex items-center justify-center">
+        <div class="glass-card w-full max-w-sm text-center">
+            <h2 class="text-xl font-bold mb-6 text-orange-500 italic">DWBD ADMIN</h2>
+            <input type="password" id="passInput" placeholder="সিক্রেট কোড দিন" class="input-box text-center tracking-[5px]">
+            <button onclick="login()" class="w-full bg-orange-600 py-4 rounded-2xl font-bold text-white">ভেরিফাই</button>
+        </div>
+    </div>
+
+    <div id="content" class="hidden max-w-4xl mx-auto">
+        <div class="flex items-center justify-between mb-8">
+            <h2 class="text-2xl font-bold text-orange-500 italic">কন্ট্রোল প্যানেল</h2>
+            <button onclick="location.reload()" class="bg-slate-800 p-3 rounded-2xl"><i class="fas fa-sync"></i></button>
+        </div>
+
+        <!-- Site Status (Offline/Online) -->
+        <div class="glass-card mb-8 border-blue-500/20">
+            <h3 class="text-blue-400 font-bold mb-4 text-xs uppercase italic"><i class="fas fa-power-off"></i> সাইট স্ট্যাটাস</h3>
+            <select id="siteStatus" onchange="updateStatus(this.value)" class="w-full bg-slate-800 p-4 rounded-2xl outline-none">
+                <option value="online">ONLINE</option>
+                <option value="offline">OFFLINE</option>
+            </select>
+        </div>
+
+        <div class="glass-card mb-8 border-orange-500/20">
+            <h3 class="text-orange-400 font-bold mb-4 text-xs uppercase italic"><i class="fas fa-wallet"></i> পেমেন্ট নাম্বার</h3>
+            <div class="flex gap-2">
+                <input type="text" id="payNum" placeholder="বিকাশ/নগদ নাম্বার" class="input-box mb-0">
+                <button onclick="updatePayment()" class="bg-orange-600 px-6 rounded-2xl font-bold text-xs text-white">আপডেট</button>
+            </div>
+        </div>
+
+        <div class="glass-card mb-8">
+            <h3 id="form-title" class="text-blue-400 font-bold mb-4 text-xs uppercase italic">প্রোডাক্ট এন্ট্রি</h3>
+            <input type="hidden" id="pid"> 
+            <input type="text" id="pTitle" placeholder="সার্ভিসের নাম" class="input-box">
+            <textarea id="pDesc" placeholder="বিস্তারিত বর্ণনা" class="input-box h-16"></textarea>
+            <input type="text" id="pImg" placeholder="ছবির লিঙ্ক (URL)" class="input-box">
+            <div class="grid grid-cols-2 gap-3">
+                <input type="number" id="pPdf" placeholder="PDF মূল্য" class="input-box">
+                <input type="number" id="pPrint" placeholder="Hard Copy মূল্য" class="input-box">
+            </div>
+            <button id="pBtn" onclick="save()" class="w-full bg-blue-600 py-4 rounded-2xl font-bold text-white">সেভ করুন</button>
+            <button id="cancelBtn" onclick="resetForm()" class="hidden w-full text-xs text-red-400 mt-2">বাতিল</button>
+        </div>
+
+        <h3 class="text-lg font-bold mb-4 text-emerald-400 italic">প্রোডাক্ট লিস্ট</h3>
+        <div id="product-list" class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-12"></div>
+
+        <h3 class="text-lg font-bold mb-4 text-blue-400 italic">অর্ডার ম্যানেজমেন্ট</h3>
+        <div id="order-list" class="space-y-4"></div>
+    </div>
+
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyAixef88AV6RvG0OJmAsm-Us1J3iaUwJIk",
+            authDomain: "designworkbd-5b16a.firebaseapp.com",
+            databaseURL: "https://designworkbd-5b16a-default-rtdb.firebaseio.com",
+            projectId: "designworkbd-5b16a",
+            storageBucket: "designworkbd-5b16a.firebasestorage.app",
+            messagingSenderId: "998861158372",
+            appId: "1:998861158372:web:822d38c710d109e6ad79f1"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+        const SECRET_CODE = "DWBD-ADMIN-99-SECURE-!#";
+
+        function login() {
+            if(document.getElementById('passInput').value === SECRET_CODE) {
+                document.getElementById('login-box').style.display = 'none';
+                document.getElementById('content').classList.remove('hidden');
+                init();
+            } else { alert('ভুল কোড!'); }
+        }
+
+        function init() {
+            db.ref('settings/status').on('value', snap => {
+                document.getElementById('siteStatus').value = snap.val() || 'online';
+            });
+            db.ref('products').on('value', snap => {
+                const list = document.getElementById('product-list');
+                list.innerHTML = '';
+                const products = snap.val();
+                for(let id in products) {
+                    list.innerHTML += `<div class="glass-card p-4 flex items-center justify-between">
+                        <span class="text-xs font-bold">${products[id].title}</span>
+                        <div class="flex gap-2">
+                            <button onclick="editProduct('${id}')" class="text-blue-400"><i class="fas fa-edit"></i></button>
+                            <button onclick="deleteProduct('${id}')" class="text-red-400"><i class="fas fa-trash"></i></button>
+                        </div>
+                    </div>`;
+                }
+            });
+            db.ref('orders').on('value', snap => {
+                const list = document.getElementById('order-list'); 
+                list.innerHTML = '';
+                const orders = snap.val();
+                if(!orders) return;
+                Object.keys(orders).reverse().forEach(id => {
+                    let o = orders[id];
+                    list.innerHTML += `<div class="glass-card mb-4 text-xs">
+                        <p class="font-bold text-orange-500">${o.productTitle}</p>
+                        <p>👤 ${o.customerName} | 📞 ${o.customerPhone}</p>
+                        <select onchange="db.ref('orders/${id}').update({status: this.value})" class="bg-zinc-800 p-1 rounded mt-2">
+                            <option value="Pending" ${o.status=='Pending'?'selected':''}>Pending</option>
+                            <option value="Completed" ${o.status=='Completed'?'selected':''}>Completed</option>
+                        </select>
+                        <button onclick="db.ref('orders/${id}').remove()" class="ml-4 text-red-500">ডিলিট</button>
+                    </div>`;
+                });
+            });
+        }
+
+        function save() {
+            const id = document.getElementById('pid').value;
+            const data = { 
+                title: document.getElementById('pTitle').value, 
+                desc: document.getElementById('pDesc').value, 
+                img: document.getElementById('pImg').value, 
+                pdfPrice: document.getElementById('pPdf').value, 
+                printPrice: document.getElementById('pPrint').value 
+            };
+            if(id) db.ref('products/'+id).update(data);
+            else db.ref('products').push(data);
+            resetForm();
+            alert('সফল!');
+        }
+
+        function editProduct(id) {
+            db.ref('products/'+id).once('value', snap => {
+                const p = snap.val();
+                document.getElementById('pid').value = id;
+                document.getElementById('pTitle').value = p.title;
+                document.getElementById('pDesc').value = p.desc;
+                document.getElementById('pImg').value = p.img;
+                document.getElementById('pPdf').value = p.pdfPrice;
+                document.getElementById('pPrint').value = p.printPrice;
+                document.getElementById('pBtn').innerText = "আপডেট করুন";
+                document.getElementById('cancelBtn').classList.remove('hidden');
+            });
+        }
+
+        function updateStatus(val) { db.ref('settings/status').set(val).then(() => alert('স্ট্যাটাস আপডেট হয়েছে!')); }
+        function updatePayment() { db.ref('settings/paymentNum').set(document.getElementById('payNum').value).then(() => alert('পেমেন্ট নম্বর আপডেট সফল!')); }
+        function deleteProduct(id) { if(confirm('ডিলিট?')) db.ref('products/'+id).remove(); }
+        function resetForm() {
+            document.getElementById('pid').value = '';
+            document.getElementById('pTitle').value = '';
+            document.getElementById('pDesc').value = '';
+            document.getElementById('pImg').value = '';
+            document.getElementById('pPdf').value = '';
+            document.getElementById('pPrint').value = '';
+            document.getElementById('pBtn').innerText = "সেভ করুন";
+            document.getElementById('cancelBtn').classList.add('hidden');
+        }
+    </script>
+</body>
+</html>
