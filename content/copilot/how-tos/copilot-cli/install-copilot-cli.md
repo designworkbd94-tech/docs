@@ -1,7 +1,7 @@
 ---
 title: Installing GitHub Copilot CLI
 shortTitle: Install Copilot CLI
-intro: 'Learn how to install {% data variables.copilot.copilot_cli_short %} so that you can use {% data variables.product.prodname_copilot_short %} directly from the command line.'
+intro: Learn how to install {% data variables.copilot.copilot_cli_short %} so that you can use {% data variables.product.prodname_copilot_short %} directly from the command line.
 versions:
   feature: copilot
 topics:
@@ -15,6 +15,7 @@ redirect_from:
   - /copilot/managing-copilot/configure-personal-settings/installing-github-copilot-in-the-cli
   - /copilot/how-tos/personal-settings/installing-github-copilot-in-the-cli
   - /copilot/how-tos/set-up/installing-github-copilot-in-the-cli
+  - /copilot/how-tos/set-up/install-copilot-cli
 contentType: how-tos
 category:
   - Configure Copilot
